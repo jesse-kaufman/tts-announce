@@ -1,0 +1,118 @@
+## What's changed in this release
+{{#each releases}}
+  {{#if summary}}
+    {{summary}}
+  {{/if}}
+
+  {{#each merges}}
+    -
+    {{#if commit.breaking}}
+      **Breaking change:**
+    {{/if}}{{message}}
+  {{/each}}
+
+  {{#each fixes}}
+    -
+    {{#if commit.breaking}}
+      **Breaking change:**
+    {{/if}}{{commit.subject}}{{#each fixes}}{{/each}}
+  {{/each}}
+
+  {{! List commits with 'breaking:' or 'breaking change:' anywhere in the message under a heading}}
+  {{#commit-list
+    commits
+    heading="### Breaking changes :warning:"
+    message="breaking change:|breaking:"
+  }}
+    - {{subject}}
+  {{/commit-list}}
+
+  {{#commit-list
+    commits
+    heading="### New features"
+    message="^feat:|feat\("
+    exclude="breaking change:|breaking:"
+  }}
+    - {{subject}}
+  {{/commit-list}}
+
+  {{#commit-list
+    commits
+    heading="### Improvements"
+    message="^refactor:|^refactor\("
+    exclude="breaking change:|breaking:"
+  }}
+    - {{subject}}
+  {{/commit-list}}
+
+  {{#commit-list
+    commits
+    heading="### Bug fixes"
+    message="^fix:|^fix\("
+    exclude="breaking change:|breaking:"
+  }}
+    - {{subject}}
+  {{/commit-list}}
+
+  {{#commit-list
+    commits
+    heading="### Performance improvements"
+    message="^perf:|^perf\("
+    exclude="breaking change:|breaking:"
+  }}
+    - {{subject}}
+  {{/commit-list}}
+
+  {{#commit-list
+    commits
+    heading="### CI/CD"
+    message="^ci:|^ci\(|^build:|^build\("
+    exclude="breaking change:|breaking:"
+  }}
+    - {{subject}}
+  {{/commit-list}}
+
+  {{#commit-list
+    commits
+    heading="### Documentation"
+    message="^docs:|^docs\("
+    exclude="breaking change:|breaking:"
+  }}
+    - {{subject}}
+  {{/commit-list}}
+
+  {{#commit-list
+    commits
+    heading="### Testing"
+    message="^test:|^test\("
+    exclude="breaking change:|breaking:"
+  }}
+    - {{subject}}
+  {{/commit-list}}
+
+  {{#commit-list
+    commits
+    heading="### Code style"
+    message="^style:|^style\("
+    exclude="breaking change:|breaking:"
+  }}
+    - {{subject}}
+  {{/commit-list}}
+
+  {{#commit-list
+    commits
+    heading="### Housekeeping"
+    message="^chore:|^chore\("
+    exclude="breaking change:|breaking:"
+  }}
+    - {{subject}}
+  {{/commit-list}}
+
+  {{#commit-list
+    commits
+    heading="### Other changes"
+    exclude="breaking change:|breaking:|^feat:|^feat\(|^fix:|^fix\(|^chore:|^chore\(|^docs:|^docs\(|^refactor:|^refactor\(|^test:|^test\(|^style:|^style\(|^perf:|^perf\(|^ci:|^ci\(|^build:|^build\("
+  }}
+    - {{subject}}
+  {{/commit-list}}
+{{/each}}

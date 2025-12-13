@@ -1,0 +1,109 @@
+{{!--
+Introduction
+• This template tries to follow conventional commits format https://www.conventionalcommits.org/en/v1.0.0/
+• The template uses regex to filter commit types into their own headings (this is more than just fixes and features headings)
+• It also uses the replaceText function in package.json to remove the commit type text from the message, because the headers are shown instead.
+
+• The text 'Breaking:' or 'Breaking changes:' can be located anywhere in the commit.
+• The types feat:, fix:, chore:, docs:, refactor:, test:, style:, perf: must be at the beginning of the commit subject with an : on end.
+• They can optionally have a scope set to outline the module or component that is affected eg feat(bldAssess):
+• There is a short hash on the end of every commit that is currently commented out so that change log did not grow too long (due to some system's file size limitations).  You can uncomment if you wish [`{{shorthash}}`]({{href}})
+
+Example Definitions
+• feat: A new feature
+• fix: A bug fix
+• perf: A code change that improves performance
+• refactor: A code change that neither fixes a bug nor adds a feature
+• style: Changes that do not affect the meaning of the code (white-space, formatting, spelling mistakes, missing semi-colons, etc)
+• test: Adding missing tests or correcting existing tests
+• docs: Adding/updating documentation
+• chore: Something like updating a library version, or moving files to be in a better location and updating all file refs
+--}}
+# ChangeLog
+
+{{! Comment to preserve the text below from being merged with heading above by Prettier. }}
+This file lists notable changes for each release. It excludes conventional
+commit prefixes such as `style:`, `test:`, `docs:`, and `chore:` in order to
+focus on the most important changes. To view all changes, see the release notes
+or click the "View all changes..." link after a release.
+
+{{! Comment to preserve the text below from being merged with heading above by Prettier. }}
+A release with no changes listed here means all changes for that release were
+one of the above prefixes.
+
+{{#each releases}}
+  {{#if href}}
+    ## [{{title}}]({{href}}) - _{{niceDate}}_
+  {{else}}
+    ## {{title}} - _{{niceDate}}_
+  {{/if}}
+
+  {{#if summary}}
+    {{summary}}
+  {{/if}}
+
+  {{#each merges}}
+    -
+    {{#if commit.breaking}}
+      **Breaking change:**
+    {{/if}}{{message}}
+  {{/each}}
+
+  {{#each fixes}}
+    -
+    {{#if commit.breaking}}
+      **Breaking change:**
+    {{/if}}{{commit.subject}}{{#each fixes}}{{/each}}
+  {{/each}}
+
+  {{! List commits with 'breaking:' or 'breaking change:' anywhere in the message under a heading}}
+  {{#commit-list
+    commits
+    heading="### Breaking changes :warning:"
+    message="breaking change:|breaking:"
+  }}
+    - {{subject}}
+  {{/commit-list}}
+
+  {{#commit-list
+    commits
+    heading="### New features"
+    message="^feat:|feat\("
+    exclude="breaking change:|breaking:"
+  }}
+    - {{subject}}
+  {{/commit-list}}
+
+  {{#commit-list
+    commits
+    heading="### Improvements"
+    message="^refactor:|^refactor\("
+    exclude="breaking change:|breaking:"
+  }}
+    - {{subject}}
+  {{/commit-list}}
+
+  {{#commit-list
+    commits
+    heading="### Bug fixes"
+    message="^fix:|^fix\("
+    exclude="breaking change:|breaking:"
+  }}
+    - {{subject}}
+  {{/commit-list}}
+
+  {{#commit-list
+    commits
+    heading="### Performance improvements"
+    message="^perf:|^perf\("
+    exclude="breaking change:|breaking:"
+  }}
+    - {{subject}}
+  {{/commit-list}}
+
+  {{#if href}}
+    _[View all changes in {{title}} »]({{href}})_
+  {{/if}}
+
+  {{! This line ensures blank line between releases }}
+{{/each}}

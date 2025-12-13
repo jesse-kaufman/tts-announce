@@ -1,0 +1,36 @@
+name: construction-loans
+
+services:
+  frontend:
+    image: docker.pbt.local/construction-loans-frontend:latest
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile
+    env_file: .env.development
+    networks:
+      - proxy
+      - private
+    restart: always
+    ports:
+      - 8083:80
+    volumes:
+      - ./data/logs/frontend:/var/log/nginx
+    depends_on:
+      - backend
+
+  backend:
+    image: docker.pbt.local/construction-loans-backend:latest
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
+    env_file: .env.development
+    volumes:
+      - ./data/backend:/data
+    networks:
+      - private
+    restart: always
+
+networks:
+  proxy:
+  private:
+    internal: true

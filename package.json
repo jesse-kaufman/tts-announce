@@ -1,0 +1,12 @@
+{
+  "name": "tts-chime-service",
+  "version": "1.0.0",
+  "description": "Service to combine chimes with Piper TTS",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

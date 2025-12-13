@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  tts-chime-service:
+    build: .
+    container_name: tts-chime-service
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - PIPER_HOST=piper  # Change this to your Piper container name
+      - PIPER_PORT=10200
+      - CHIMES_DIR=/chimes
+      - CACHE_DIR=/cache
+      - CACHE_TTL_HOURS=24  # Cache files for 24 hours
+      - PORT=3000
+    volumes:
+      - /path/to/your/chimes:/chimes:ro  # Change this to where your chime files are
+      - /path/to/cache:/cache  # Change this to where you want cache files stored
+    networks:
+      - homeassistant  # Use the same network as your other containers
+
+networks:
+  homeassistant:
+    external: true  # If you're using an existing network
