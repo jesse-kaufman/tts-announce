@@ -1,5 +1,20 @@
-/** TypeScript config for scripts/build tools. */
+/** Shared base TypeScript configuration for all workspaces in project. */
 {
-  "extends": "./tsconfig.base.json",
-  "include": ["./scripts/**/*"]
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "allowJs": true,
+    "checkJs": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "useDefineForClassFields": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true
+  },
+  "exclude": ["**/node_modules", "**/dist"]
 }
