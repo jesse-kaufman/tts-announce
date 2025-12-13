@@ -6,6 +6,8 @@ import { spawn } from "child_process"
 import { promisify } from "util"
 import { pipeline } from "stream"
 import crypto from "crypto"
+import checkHealth from "./src/controllers/health"
+
 const streamPipeline = promisify(pipeline)
 
 const app = express()
@@ -374,9 +376,7 @@ app.post("/tts", async (req, res) => {
 })
 
 // Health check endpoint
-app.get("/health", (req, res) => {
-  res.json({ status: "ok" })
-})
+app.get("/health", checkHealth)
 
 app.listen(PORT, () => {
   console.log(`TTS Chime Service running on port ${PORT}`)
