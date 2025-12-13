@@ -1,11 +1,11 @@
-const express = require('express');
-const net = require('net');
-const fs = require('fs').promises;
-const path = require('path');
-const { spawn } = require('child_process');
-const { promisify } = require('util');
-const { pipeline } = require('stream');
-const crypto = require('crypto');
+import express from "express"
+import net from "net"
+const fs = require("fs").promises
+import path from "path"
+import { spawn } from "child_process"
+import { promisify } from "util"
+import { pipeline } from "stream"
+import crypto from "crypto"
 const streamPipeline = promisify(pipeline);
 
 const app = express();
