@@ -1,0 +1,15 @@
+{
+  "semi": false,
+  "singleQuote": false,
+  "trailingComma": "es5",
+  "htmlWhitespaceSensitivity": "ignore",
+  "proseWrap": "always",
+  "overrides": [
+    {
+      "files": "*.md",
+      "options": {
+        "printWidth": 100
+      }
+    }
+  ]
+}

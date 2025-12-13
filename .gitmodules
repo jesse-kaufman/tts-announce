@@ -1,0 +1,3 @@
+[submodule "eslint-config"]
+	path = eslint-config
+	url = git@github.com:jesse-kaufman/eslint-config.git

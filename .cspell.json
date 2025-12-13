@@ -1,0 +1,22 @@
+{
+  "version": "0.2",
+  "useGitignore": true,
+  "ignorePaths": [
+    "package.json",
+    "CHANGELOG.md"
+  ],
+  "words": [
+    "autolinks",
+    "cjvf",
+    "commitlint",
+    "DBML",
+    "horiz",
+    "HVAC",
+    "Numberish",
+    "Reactives",
+    "roboto",
+    "shorthash",
+    "unadvanced",
+    "varchar"
+  ]
+}

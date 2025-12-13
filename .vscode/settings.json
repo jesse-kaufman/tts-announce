@@ -1,0 +1,74 @@
+{
+  "files.associations": {
+    "*.css": "tailwindcss"
+  },
+  "javascript.preferences.importModuleSpecifierEnding": "js",
+  "typescript.preferences.importModuleSpecifierEnding": "minimal",
+  "javascript.preferences.importModuleSpecifier": "shortest",
+  "typescript.preferences.importModuleSpecifier": "shortest",
+  "typescript.format.semicolons": "remove",
+  "javascript.preferences.quoteStyle": "double",
+  "javascript.format.semicolons": "remove",
+  "editor.tabSize": 2,
+  "[markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true
+  },
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 3000,
+  "files.autoSaveWhenNoErrors": true,
+  "editor.formatOnSave": true,
+  "git.suggestSmartCommit": false,
+  "[html]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "eslint.useFlatConfig": true,
+  "css.customData": [".vscode/tailwind.json"],
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "vue.server.hybridMode": true,
+  "typescript.tsserver.experimental.enableProjectDiagnostics": false,
+  "[vue]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[dockercompose]": {
+    "editor.insertSpaces": true,
+    "editor.tabSize": 2,
+    "editor.autoIndent": "advanced",
+    "editor.quickSuggestions": {
+      "other": true,
+      "comments": false,
+      "strings": true
+    },
+    "editor.defaultFormatter": "redhat.vscode-yaml"
+  },
+  "[nginx]": {
+    "editor.defaultFormatter": "AaaaronZhou.nginx-config-formatter-vscode-extension"
+  },
+  "vue.autoInsert.dotValue": true,
+  "vue.inlayHints.destructuredProps": true,
+  "vue.inlayHints.missingProps": true,
+  "vue.inlayHints.inlineHandlerLeading": true,
+  "vue.inlayHints.optionsWrapper": true,
+  "vue.inlayHints.vBindShorthand": true,
+  "vue.suggest.componentNameCasing": "alwaysPascalCase",
+  "vue.suggest.propNameCasing": "alwaysCamelCase",
+  "[github-actions-workflow]": {
+    "editor.defaultFormatter": "redhat.vscode-yaml"
+  },
+  "[css]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "headwind.prependCustomClasses": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
+}
