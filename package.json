@@ -1,5 +1,5 @@
 {
-  "name": "announce-service",
+  "name": "tts-announce",
   "version": "2025.12.0",
   "private": true,
   "sideEffects": false,
