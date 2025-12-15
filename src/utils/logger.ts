@@ -3,7 +3,7 @@
 import chalk from "chalk"
 import pino, { type Logger } from "pino"
 import pretty, { type PrettyOptions } from "pino-pretty"
-import { LOG_LEVEL, NODE_ENV } from "backend/config/common"
+import { LOG_LEVEL, NODE_ENV } from "#config"
 
 type ExtendedLogger = Logger & {
   success(msg: string): void
