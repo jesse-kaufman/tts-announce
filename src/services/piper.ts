@@ -153,6 +153,7 @@ export const synthesize = async (text: string): Promise<Buffer> =>
       audioChunks: [],
     }
 
+    // Connect to Wyoming socket
     const client = connectSocket()
 
     /**
@@ -160,6 +161,7 @@ export const synthesize = async (text: string): Promise<Buffer> =>
      * @param audio - Completed audio buffer.
      */
     const handleComplete = (audio: Buffer): void => {
+      // Close connection
       client.end()
       resolve(audio)
     }
