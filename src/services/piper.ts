@@ -168,6 +168,8 @@ export const synthesize = async (text: string): Promise<Buffer> =>
       processData(state, data, handleComplete)
     })
     client.on("error", (err: Error): void => {
+      // Close the connection
+      client.destroy()
       console.error("Piper connection error:", err)
       reject(err)
     })
