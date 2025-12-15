@@ -8,7 +8,7 @@ import buildConfig from "./eslint-config/index.js"
 
 const workspaces = [
   {
-    name: "",
+    name: "tts-announce",
     files: ["server.ts", "src/**"],
     settings: {
       "import/resolver": {
