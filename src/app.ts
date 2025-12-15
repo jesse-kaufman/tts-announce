@@ -6,7 +6,8 @@ import fs from "node:fs/promises"
 import { CHIMES_DIR } from "#config"
 import path from "node:path"
 import { spawn } from "node:child_process"
-import { getPiperAudio, pcmToWav } from "#utils/audioUtils"
+import piper from "#services/piper"
+import { concatenateAndConvertToMP3, pcmToWav } from "#utils/audioUtils"
 
 const app = express()
 app.use(express.json())
@@ -42,7 +43,7 @@ app.post("/generate-audio", async (req, res) => {
     }
 
     // Get TTS audio from Piper
-    const piperAudio = await getPiperAudio(text)
+    const piperAudio = await piper.synthesize(text)
     console.log(`Received ${piperAudio.length} bytes from Piper`)
 
     // Convert PCM to WAV
