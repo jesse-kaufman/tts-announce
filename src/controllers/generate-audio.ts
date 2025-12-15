@@ -1,0 +1,1 @@
+/** @file Generate audio controller. */
