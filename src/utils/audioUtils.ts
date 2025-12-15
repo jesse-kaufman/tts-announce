@@ -2,6 +2,8 @@
 import { spawn } from "node:child_process"
 import fs from "node:fs/promises"
 import path from "node:path"
+import piper from "#services/piper"
+import pcmToWav from "./pcmUtils"
 
 interface TempFiles {
   chimeFile: string
@@ -9,11 +11,24 @@ interface TempFiles {
   concatListFile: string
 }
 
+/** Common ffmpeg MP3 output arguments. */
+const MP3_OUTPUT_ARGS = [
+  "-ar",
+  "22050",
+  "-ac",
+  "1",
+  "-c:a",
+  "libmp3lame",
+  "-b:a",
+  "48k",
+  "pipe:1",
+] as const
+
 /**
  * Generates temporary file paths for audio processing.
  * @returns Object with temporary audio file paths.
  */
-const createTempFilePaths = (): TempFiles => {
+const getTempFilePaths = (): TempFiles => {
   const now = String(Date.now())
   return {
     chimeFile: path.join("/tmp", `chime_${now}.tmp`),
@@ -57,93 +72,38 @@ const cleanupTempFiles = (files: TempFiles): void => {
 }
 
 /**
- * Runs ffmpeg to concatenate and convert audio to MP3.
- * @param concatListFile - List of files to concatenate.
- * @param onComplete - Callback to run on completion.
- * @param onError - Callback to run on error.
+ * Runs ffmpeg with given arguments and returns output buffer.
+ * @param args - FFmpeg command line arguments.
+ * @param inputBuffer - Optional input buffer to pipe to stdin.
+ * @returns Promise resolving to output buffer.
  */
-const runFfmpeg = (
-  concatListFile: string,
-  onComplete: (buffer: Buffer) => void,
-  onError: (err: Error) => void
-): void => {
-  const ffmpeg = spawn("ffmpeg", [
-    "-f",
-    "concat",
-    "-safe",
-    "0",
-    "-i",
-    concatListFile,
-    "-ar",
-    "22050",
-    "-ac",
-    "1",
-    "-c:a",
-    "libmp3lame",
-    "-b:a",
-    "48k",
-    "pipe:1",
-  ])
+const runFfmpeg = async (
+  args: string[],
+  inputBuffer?: Buffer
+): Promise<Buffer> =>
+  new Promise((resolve, reject) => {
+    const ffmpeg = spawn("ffmpeg", args)
+    const chunks: Buffer[] = []
 
-  const chunks: Buffer[] = []
+    ffmpeg.stdout.on("data", (chunk: Buffer) => chunks.push(chunk))
+    ffmpeg.stderr.on("data", (data) => console.log("ffmpeg:", String(data)))
 
-  ffmpeg.stdout.on("data", (chunk: Buffer) => chunks.push(chunk))
-  ffmpeg.stderr.on("data", (data) => console.log("ffmpeg:", String(data)))
+    ffmpeg.on("close", (code: number) => {
+      if (code === 0) {
+        resolve(Buffer.concat(chunks))
+      } else {
+        reject(new Error(`ffmpeg exited with code ${String(code)}`))
+      }
+    })
 
-  ffmpeg.on("close", (code: number): void => {
-    if (code === 0) {
-      onComplete(Buffer.concat(chunks))
-    } else {
-      onError(new Error(`ffmpeg exited with code ${String(code)}`))
+    ffmpeg.on("error", reject)
+
+    // Write input if provided
+    if (inputBuffer) {
+      ffmpeg.stdin.write(inputBuffer)
+      ffmpeg.stdin.end()
     }
   })
-
-  ffmpeg.on("error", onError)
-}
-
-/**
- * Converts PCM audio to WAV format.
- * @param pcmData - PCM data to convert.
- * @param sampleRate - Sample rate to use in conversion.
- * @param channels - Channel count.
- * @param bitDepth - Bitrate for WAV file.
- * @returns Buffer.
- */
-export const pcmToWav = (
-  pcmData: Buffer,
-  sampleRate = 22_050,
-  channels = 1,
-  bitDepth = 16
-): Buffer => {
-  const byteRate = sampleRate * channels * (bitDepth / 8)
-  const blockAlign = channels * (bitDepth / 8)
-  const dataSize = pcmData.length
-  const headerSize = 44
-
-  const buffer = Buffer.alloc(headerSize + dataSize)
-
-  // RIFF header
-  buffer.write("RIFF", 0)
-  buffer.writeUInt32LE(36 + dataSize, 4)
-  buffer.write("WAVE", 8)
-
-  // Fmt chunk
-  buffer.write("fmt ", 12)
-  buffer.writeUInt32LE(16, 16) // Fmt chunk size
-  buffer.writeUInt16LE(1, 20) // Audio format (1 = PCM)
-  buffer.writeUInt16LE(channels, 22)
-  buffer.writeUInt32LE(sampleRate, 24)
-  buffer.writeUInt32LE(byteRate, 28)
-  buffer.writeUInt16LE(blockAlign, 32)
-  buffer.writeUInt16LE(bitDepth, 34)
-
-  // Data chunk
-  buffer.write("data", 36)
-  buffer.writeUInt32LE(dataSize, 40)
-  pcmData.copy(buffer, 44)
-
-  return buffer
-}
 
 /**
  * Concatenates chime and TTS audio and converts to MP3 format.
@@ -151,30 +111,81 @@ export const pcmToWav = (
  * @param ttsWavBuffer - TTS audio.
  * @returns Concatenated buffer.
  */
-export const concatenateAndConvertToMP3 = async (
+const concatenateAndConvertToMP3 = async (
   chimeBuffer: Buffer,
   ttsWavBuffer: Buffer
 ): Promise<Buffer> => {
-  const files = createTempFilePaths()
+  const files = getTempFilePaths()
 
   try {
     await writeTempFiles(files, chimeBuffer, ttsWavBuffer)
 
-    return await new Promise((resolve, reject) => {
-      runFfmpeg(
-        files.concatListFile,
-        (buffer) => {
-          cleanupTempFiles(files)
-          resolve(buffer)
-        },
-        (err) => {
-          cleanupTempFiles(files)
-          reject(err)
-        }
-      )
-    })
+    const result = await runFfmpeg([
+      "-f",
+      "concat",
+      "-safe",
+      "0",
+      "-i",
+      files.concatListFile,
+      ...MP3_OUTPUT_ARGS,
+    ])
+
+    cleanupTempFiles(files)
+    return result
   } catch (err) {
     cleanupTempFiles(files)
     throw err
   }
 }
+
+/**
+ * Converts WAV to MP3 using ffmpeg.
+ * @param wavBuffer - WAV audio buffer.
+ * @returns MP3 audio buffer.
+ */
+const convertToMP3 = async (wavBuffer: Buffer): Promise<Buffer> =>
+  runFfmpeg(["-f", "wav", "-i", "pipe:0", ...MP3_OUTPUT_ARGS], wavBuffer)
+
+/**
+ * Attempts to load a chime file.
+ * @param chime - Type of chime to load.
+ * @returns Chime buffer or null if not found.
+ */
+const loadChimeFile = async (chime: string): Promise<Buffer | null> => {
+  try {
+    return await fs.readFile(`${chime}.mp3`)
+  } catch {
+    // No-op
+  }
+
+  console.warn(`Chime file ${chime}.mp3 not found`)
+  return null
+}
+
+/**
+ * Generates MP3 audio from text and optional chime.
+ * @param text - Text to synthesize.
+ * @param chime - Chime type.
+ * @returns MP3 audio buffer.
+ */
+export const generateMP3 = async (
+  text: string,
+  chime: string
+): Promise<Buffer> => {
+  // Get TTS audio from Piper
+  const piperAudio = await piper.synthesize(text)
+  console.log(`Received ${String(piperAudio.length)} bytes from Piper`)
+
+  // Convert PCM to WAV
+  const ttsWav = pcmToWav(piperAudio)
+
+  // Load chime file
+  const chimeBuffer = await loadChimeFile(chime)
+
+  // Generate MP3 with or without chime
+  return chimeBuffer
+    ? await concatenateAndConvertToMP3(chimeBuffer, ttsWav)
+    : await convertToMP3(ttsWav)
+}
+
+export default generateMP3

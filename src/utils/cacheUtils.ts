@@ -7,27 +7,31 @@ import { CACHE_DIR, CACHE_TTL_HOURS } from "#config"
 /**
  * Gets cache key for text + chimeType combination.
  * @param text - TTS Message text.
- * @param chimeType - Chime to play.
+ * @param chime - Chime to play.
  * @returns Cache key for a particular message.
  */
-export const getCacheKey = (text: string, chimeType: string): string => {
+export const getCacheKey = (text: string, chime: string): string => {
   const hash = crypto.createHash("sha256")
-  hash.update(`${text}:${chimeType}`)
+  hash.update(`${text}:${chime}`)
   return hash.digest("hex")
 }
 
 /**
  * Gets cached file if it exists.
- * @param cacheKey - Key for cached file.
+ * @param text - TTS Message text.
+ * @param chime - Chime to play.
  * @returns Cached file path if file exists.
  */
 export const getCachedFile = async (
-  cacheKey: string
+  text: string,
+  chime: string
 ): Promise<string | null> => {
+  const cacheKey = getCacheKey(text, chime)
   const cachePath = path.join(CACHE_DIR, `${cacheKey}.mp3`)
 
   try {
     const stats = await fs.stat(cachePath)
+    // eslint-disable-next-line @typescript-eslint/no-magic-numbers
     const ageHours = (Date.now() - stats.mtimeMs) / (1000 * 60 * 60)
 
     // Cache hit and not expired
@@ -46,18 +50,19 @@ export const getCachedFile = async (
   }
 }
 
-// Save MP3 to cache
-
 /**
  * Saves audio file to cache.
- * @param cacheKey - Cache key for audio file.
+ * @param text - TTS Message text.
+ * @param chime - Chime to play.
  * @param mp3Buffer - MP3 buffer data.
  * @returns Path to cached file.
  */
 export const saveCachedFile = async (
-  cacheKey: string,
+  text: string,
+  chime: string,
   mp3Buffer: Buffer
 ): Promise<string> => {
+  const cacheKey = getCacheKey(text, chime)
   const cachePath = path.join(CACHE_DIR, `${cacheKey}.mp3`)
   await fs.writeFile(cachePath, mp3Buffer)
   console.log(`Cached: ${cacheKey}`)
