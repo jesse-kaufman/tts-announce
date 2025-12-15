@@ -55,12 +55,14 @@ const handleWyomingEvent = (
     const event = JSON.parse(line) as WyomingEvent
     console.log("Received event:", event.type)
 
+    // Received chunk of audio
     if (event.type === "audio-chunk" && event.payload_length) {
       state.expectingAudio = true
       state.currentPayloadLength = event.payload_length
       return true
     }
 
+    // Done receiving audio
     if (event.type === "audio-stop") {
       onComplete(Buffer.concat(state.audioChunks))
       return false
@@ -106,6 +108,7 @@ const processData = (
   state.buffer = Buffer.concat([state.buffer, data])
 
   while (state.buffer.length > 0) {
+    // If expecting audio, extract chunk, otherwise process Wyoming event
     const canContinue = state.expectingAudio
       ? extractAudioChunk(state)
       : processWyomingEvent(state, onComplete)
@@ -142,6 +145,7 @@ const setupTimeout = (client: Socket, onTimeout: () => void): void => {
  */
 export const synthesize = async (text: string): Promise<Buffer> =>
   new Promise((resolve, reject) => {
+    // Initialize state
     const state: WyomingProtocolState = {
       buffer: Buffer.alloc(0),
       expectingAudio: false,
