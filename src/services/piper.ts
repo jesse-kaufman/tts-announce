@@ -28,9 +28,8 @@ const createSynthesizeRequest = (text: string): string =>
  * @returns True if chunk was extracted, false if more data needed.
  */
 const extractAudioChunk = (state: WyomingProtocolState): boolean => {
-  if (state.buffer.length < state.currentPayloadLength) {
-    return false
-  }
+  // More data needed
+  if (state.buffer.length < state.currentPayloadLength) return false
 
   const audioChunk = state.buffer.subarray(0, state.currentPayloadLength)
   state.audioChunks.push(audioChunk)
@@ -169,9 +168,7 @@ export const synthesize = async (text: string): Promise<Buffer> =>
       reject(err)
     })
     client.on("end", () => console.log("Piper connection closed"))
-    client.on("connect", () => {
-      client.write(createSynthesizeRequest(text))
-    })
+    client.on("connect", () => client.write(createSynthesizeRequest(text)))
 
     setupTimeout(client, () => reject(new Error("Piper request timeout")))
   })
