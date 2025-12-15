@@ -18,7 +18,7 @@ const workspaces = [
         },
         alias: {
           map: [
-            ["#config/*", "./src/config"],
+            ["#config", "./src/config/index.ts"],
             ["#controllers/*", "./src/controllers/*"],
             ["#errors", "./src/errors"],
             ["#middlewares/*", "./src/middlewares/*"],
