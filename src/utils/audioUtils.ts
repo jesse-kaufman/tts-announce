@@ -9,7 +9,7 @@ import piper from "#services/piper"
  * @param mp3Buffers - Array of MP3 buffers to write.
  * @returns Array of temporary file paths.
  */
-const writeTempMp3Files = async (mp3Buffers: Buffer[]): Promise<string[]> => {
+const writeTempFiles = async (mp3Buffers: Buffer[]): Promise<string[]> => {
   const now = String(Date.now())
   const tempFiles = mp3Buffers.map((_, i) =>
     path.join("/tmp", `mp3_${now}_${String(i)}.mp3`)
