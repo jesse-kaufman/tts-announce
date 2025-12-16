@@ -74,7 +74,7 @@ const getRev = (current: string, newYear: number, newMonth: number): number => {
   const [curYear, curMonth, curRev] = current.split(".")
 
   // If same year and month, increment revision, else reset to 0
-  return `${curYear}.${curMonth}` === `${String(newYear)}.${String(newMonth)}`
+  return `${curYear}.${curMonth}` === `${newYear}.${newMonth}`
     ? Number.parseInt(curRev || "0") + 1
     : 0
 }
@@ -151,7 +151,7 @@ print("Pushing tags to remote…")
 run(`git push origin --tags`)
 
 // eslint-disable-next-line @typescript-eslint/no-magic-numbers
-print(`\nWaiting ${String(sleepTime / 1000)}s…\n`, italic)
+print(`\nWaiting ${sleepTime / 1000}s…\n`, italic)
 await sleep(sleepTime)
 
 // Create new release

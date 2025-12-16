@@ -18,9 +18,9 @@ try {
 }
 
 app.listen(PORT, () => {
-  console.log(`TTS Chime Service running on port ${String(PORT)}`)
-  console.log(`Piper: ${PIPER_HOST}:${String(PIPER_PORT)}`)
+  console.log(`TTS Chime Service running on port ${PORT}`)
+  console.log(`Piper: ${PIPER_HOST}:${PIPER_PORT}`)
   console.log(`Chimes directory: ${CHIMES_DIR}`)
   console.log(`Cache directory: ${CACHE_DIR}`)
-  console.log(`Cache TTL: ${String(CACHE_TTL_HOURS)} hours`)
+  console.log(`Cache TTL: ${CACHE_TTL_HOURS} hours`)
 })

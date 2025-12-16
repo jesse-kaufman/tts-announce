@@ -70,7 +70,7 @@ const getAudio: RequestHandler = async (req, res) => {
   }
 
   console.log(
-    `Generating TTS for: "${text}" with chime: ${chime}, voice: ${voice ?? "default"}, speaker: ${speaker ?? "default"}, cache: ${String(cache)}`
+    `Generating TTS for: "${text}" with chime: ${chime}, voice: ${voice ?? "default"}, speaker: ${speaker ?? "default"}, cache: ${cache}`
   )
 
   try {

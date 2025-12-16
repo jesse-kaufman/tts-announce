@@ -33,14 +33,14 @@ export const runFfmpeg = async (
     ffmpeg.stdout.on("data", (chunk: Buffer) => chunks.push(chunk))
 
     // Log data on stderr to console
-    ffmpeg.stderr.on("data", (data) => console.log("ffmpeg:", String(data)))
+    ffmpeg.stderr.on("data", (data) => console.log("ffmpeg:", data))
 
     // Resolve or reject based on exit code from ffmpeg
     ffmpeg.on("close", (code: number) => {
       if (code === 0) {
         resolve(Buffer.concat(chunks))
       } else {
-        reject(new Error(`ffmpeg exited with code ${String(code)}`))
+        reject(new Error(`ffmpeg exited with code ${code}`))
       }
     })
 
@@ -84,7 +84,7 @@ export const convertPcmToMp3 = async (pcmBuffer: Buffer): Promise<Buffer> =>
 export const concatenateMp3Files = async (
   mp3Files: string[]
 ): Promise<Buffer> => {
-  const concatListFile = path.join("/tmp", `concat_${String(Date.now())}.txt`)
+  const concatListFile = path.join("/tmp", `concat_${Date.now()}.txt`)
 
   try {
     const concatList = mp3Files.map((f) => `file '${f}'`).join("\n")
