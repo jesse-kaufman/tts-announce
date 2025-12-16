@@ -28,5 +28,5 @@
       "#utils/*": ["./src/utils/*"]
     }
   },
-  "include": ["server.ts", "src/**/*"]
+  "include": ["server.ts", "src/**/*", "scripts/**/*"]
 }

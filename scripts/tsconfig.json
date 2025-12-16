@@ -1,5 +1,0 @@
-/** TypeScript configuration for config workspace. */
-{
-  "extends": "../tsconfig.base.json",
-  "include": ["./**/*"]
-}
