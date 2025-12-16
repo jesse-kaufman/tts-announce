@@ -20,11 +20,11 @@ const workspaces = [
           map: [
             ["#config", "./src/config/index.ts"],
             ["#controllers/*", "./src/controllers/*"],
-            ["#errors", "./src/errors"],
+            ["#errors", "./src/errors/index.ts"],
             ["#middlewares/*", "./src/middlewares/*"],
             ["#routes/*", "./src/routes/*"],
             ["#services/*", "./src/services/*"],
-            ["#types", "./src/types"],
+            ["#types", "./src/types/index.ts"],
             ["#utils/*", "./src/utils/*"],
           ],
         },
