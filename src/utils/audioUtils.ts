@@ -3,15 +3,8 @@ import { spawn } from "node:child_process"
 import fs from "node:fs/promises"
 import path from "node:path"
 import piper from "#services/piper"
-import pcmToWav from "./pcmUtils"
 
-interface TempFiles {
-  chimeFile: string
-  ttsFile: string
-  concatListFile: string
-}
-
-/** Common ffmpeg MP3 output arguments. */
+/** MP3 output encoding arguments. */
 const MP3_OUTPUT_ARGS = [
   "-ar",
   "22050",
@@ -21,52 +14,32 @@ const MP3_OUTPUT_ARGS = [
   "libmp3lame",
   "-b:a",
   "48k",
-  "pipe:1",
 ] as const
 
 /**
- * Generates temporary file paths for audio processing.
- * @returns Object with temporary audio file paths.
+ * Writes MP3 buffers to temporary files for concatenation.
+ * @param mp3Buffers - Array of MP3 buffers to write.
+ * @returns Array of temporary file paths.
  */
-const getTempFilePaths = (): TempFiles => {
+const writeTempMp3Files = async (mp3Buffers: Buffer[]): Promise<string[]> => {
   const now = String(Date.now())
-  return {
-    chimeFile: path.join("/tmp", `chime_${now}.tmp`),
-    ttsFile: path.join("/tmp", `tts_${now}.wav`),
-    concatListFile: path.join("/tmp", `concat_${now}.txt`),
-  }
-}
+  const tempFiles = mp3Buffers.map((_, i) =>
+    path.join("/tmp", `mp3_${now}_${String(i)}.mp3`)
+  )
 
-/**
- * Writes audio buffers and concat list to temporary files.
- * @param files - Object with temporary audio file paths.
- * @param chimeBuffer - Chime audio data.
- * @param ttsWavBuffer - TTS audio data.
- */
-const writeTempFiles = async (
-  files: TempFiles,
-  chimeBuffer: Buffer,
-  ttsWavBuffer: Buffer
-): Promise<void> => {
-  await Promise.all([
-    fs.writeFile(files.chimeFile, chimeBuffer),
-    fs.writeFile(files.ttsFile, ttsWavBuffer),
-  ])
+  await Promise.all(
+    tempFiles.map(async (file, i) => fs.writeFile(file, mp3Buffers[i]))
+  )
 
-  const concatList = `file '${files.chimeFile}'\nfile '${files.ttsFile}'`
-  await fs.writeFile(files.concatListFile, concatList)
+  return tempFiles
 }
 
 /**
  * Cleans up temporary files.
- * @param files - Temporary files to clean up.
+ * @param files - Temporary file paths to clean up.
  */
-const cleanupTempFiles = (files: TempFiles): void => {
-  Promise.all([
-    fs.unlink(files.chimeFile),
-    fs.unlink(files.ttsFile),
-    fs.unlink(files.concatListFile),
-  ]).catch((err: unknown) => {
+const cleanupTempFiles = (files: string[]): void => {
+  Promise.all(files.map(async (f) => fs.unlink(f))).catch((err: unknown) => {
     console.error("Error cleaning up temp files:", err)
   })
 }
@@ -106,19 +79,27 @@ const runFfmpeg = async (
   })
 
 /**
- * Concatenates chime and TTS audio and converts to MP3 format.
- * @param chimeBuffer - Chime audio.
- * @param ttsWavBuffer - TTS audio.
- * @returns Concatenated buffer.
+ * Converts PCM to MP3 using ffmpeg.
+ * @param pcmBuffer - PCM audio buffer.
+ * @returns MP3 audio buffer.
  */
-const concatenateAndConvertToMP3 = async (
-  chimeBuffer: Buffer,
-  ttsWavBuffer: Buffer
-): Promise<Buffer> => {
-  const files = getTempFilePaths()
+const convertPcmToMp3 = async (pcmBuffer: Buffer): Promise<Buffer> =>
+  runFfmpeg(
+    ["-f", "s16le", "-i", "pipe:0", ...MP3_OUTPUT_ARGS, "pipe:1"],
+    pcmBuffer
+  )
+
+/**
+ * Concatenates two MP3 files.
+ * @param mp3Files - Paths to MP3 files to concatenate.
+ * @returns Concatenated MP3 buffer.
+ */
+const concatenateMp3Files = async (mp3Files: string[]): Promise<Buffer> => {
+  const concatListFile = path.join("/tmp", `concat_${String(Date.now())}.txt`)
 
   try {
-    await writeTempFiles(files, chimeBuffer, ttsWavBuffer)
+    const concatList = mp3Files.map((f) => `file '${f}'`).join("\n")
+    await fs.writeFile(concatListFile, concatList)
 
     const result = await runFfmpeg([
       "-f",
@@ -126,25 +107,34 @@ const concatenateAndConvertToMP3 = async (
       "-safe",
       "0",
       "-i",
-      files.concatListFile,
-      ...MP3_OUTPUT_ARGS,
+      concatListFile,
+      "-c",
+      "copy", // No re-encoding needed
+      "pipe:1",
     ])
 
-    cleanupTempFiles(files)
+    await fs.unlink(concatListFile).catch(() => {
+      // Ignore cleanup errors
+    })
     return result
   } catch (err) {
-    cleanupTempFiles(files)
+    await fs.unlink(concatListFile).catch(() => {
+      // Ignore cleanup errors
+    })
     throw err
   }
 }
 
 /**
- * Converts WAV to MP3 using ffmpeg.
- * @param wavBuffer - WAV audio buffer.
- * @returns MP3 audio buffer.
+ * Normalizes MP3 to standard settings.
+ * @param mp3Buffer - MP3 audio buffer.
+ * @returns Normalized MP3 buffer.
  */
-const convertToMP3 = async (wavBuffer: Buffer): Promise<Buffer> =>
-  runFfmpeg(["-f", "wav", "-i", "pipe:0", ...MP3_OUTPUT_ARGS], wavBuffer)
+const normalizeMp3 = async (mp3Buffer: Buffer): Promise<Buffer> =>
+  runFfmpeg(
+    ["-f", "mp3", "-i", "pipe:0", ...MP3_OUTPUT_ARGS, "pipe:1"],
+    mp3Buffer
+  )
 
 /**
  * Attempts to load a chime file.
@@ -155,10 +145,9 @@ const loadChimeFile = async (chime: string): Promise<Buffer | null> => {
   try {
     return await fs.readFile(`${chime}.mp3`)
   } catch {
-    // No-op
+    console.warn(`Chime file ${chime}.mp3 not found`)
   }
 
-  console.warn(`Chime file ${chime}.mp3 not found`)
   return null
 }
 
@@ -168,7 +157,7 @@ const loadChimeFile = async (chime: string): Promise<Buffer | null> => {
  * @param chime - Chime type.
  * @returns MP3 audio buffer.
  */
-export const generateMP3 = async (
+export const generateMp3 = async (
   text: string,
   chime: string
 ): Promise<Buffer> => {
@@ -176,16 +165,27 @@ export const generateMP3 = async (
   const piperAudio = await piper.synthesize(text)
   console.log(`Received ${String(piperAudio.length)} bytes from Piper`)
 
-  // Convert PCM to WAV
-  const ttsWav = pcmToWav(piperAudio)
+  // Convert PCM to MP3
+  const ttsMp3 = await convertPcmToMp3(piperAudio)
 
   // Load chime file
   const chimeBuffer = await loadChimeFile(chime)
 
-  // Generate MP3 with or without chime
-  return chimeBuffer
-    ? await concatenateAndConvertToMP3(chimeBuffer, ttsWav)
-    : await convertToMP3(ttsWav)
+  // Return TTS-only if no chime
+  if (!chimeBuffer) return ttsMp3
+
+  // Normalize chime to match TTS settings and concatenate
+  const chimeMp3 = await normalizeMp3(chimeBuffer)
+  const tempFiles = await writeTempMp3Files([chimeMp3, ttsMp3])
+
+  try {
+    const result = await concatenateMp3Files(tempFiles)
+    cleanupTempFiles(tempFiles)
+    return result
+  } catch (err) {
+    cleanupTempFiles(tempFiles)
+    throw err
+  }
 }
 
-export default generateMP3
+export default generateMp3
