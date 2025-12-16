@@ -1,5 +1,7 @@
 /** @file FFMPEG service. */
 import { spawn } from "node:child_process"
+import fs from "node:fs/promises"
+import path from "node:path"
 
 /** MP3 output encoding arguments. */
 export const MP3_OUTPUT_ARGS = [
@@ -51,3 +53,59 @@ export const runFfmpeg = async (
       ffmpeg.stdin.end()
     }
   })
+
+/**
+ * Normalizes MP3 to standard settings.
+ * @param mp3Buffer - MP3 audio buffer.
+ * @returns Normalized MP3 buffer.
+ */
+export const normalizeMp3 = async (mp3Buffer: Buffer): Promise<Buffer> =>
+  runFfmpeg(
+    ["-f", "mp3", "-i", "pipe:0", ...MP3_OUTPUT_ARGS, "pipe:1"],
+    mp3Buffer
+  )
+
+/**
+ * Converts PCM to MP3 using ffmpeg.
+ * @param pcmBuffer - PCM audio buffer.
+ * @returns MP3 audio buffer.
+ */
+export const convertPcmToMp3 = async (pcmBuffer: Buffer): Promise<Buffer> =>
+  runFfmpeg(
+    ["-f", "s16le", "-i", "pipe:0", ...MP3_OUTPUT_ARGS, "pipe:1"],
+    pcmBuffer
+  )
+
+/**
+ * Concatenates two MP3 files.
+ * @param mp3Files - Paths to MP3 files to concatenate.
+ * @returns Concatenated MP3 buffer.
+ */
+export const concatenateMp3Files = async (
+  mp3Files: string[]
+): Promise<Buffer> => {
+  const concatListFile = path.join("/tmp", `concat_${String(Date.now())}.txt`)
+
+  try {
+    const concatList = mp3Files.map((f) => `file '${f}'`).join("\n")
+    await fs.writeFile(concatListFile, concatList)
+
+    const result = await runFfmpeg([
+      "-f",
+      "concat",
+      "-safe",
+      "0",
+      "-i",
+      concatListFile,
+      "-c",
+      "copy", // No re-encoding needed
+      "pipe:1",
+    ])
+
+    void fs.unlink(concatListFile).catch()
+    return result
+  } catch (err) {
+    void fs.unlink(concatListFile).catch()
+    throw err
+  }
+}

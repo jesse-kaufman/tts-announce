@@ -1,7 +1,11 @@
 /** @file Audio format conversion utilities. */
 import fs from "node:fs/promises"
 import path from "node:path"
-import { MP3_OUTPUT_ARGS, runFfmpeg } from "#services/ffmpeg"
+import {
+  concatenateMp3Files,
+  convertPcmToMp3,
+  normalizeMp3,
+} from "#services/ffmpeg"
 import piper from "#services/piper"
 
 /**
@@ -31,64 +35,6 @@ const cleanupTempFiles = (files: string[]): void => {
     console.error("Error cleaning up temp files:", err)
   })
 }
-
-/**
- * Converts PCM to MP3 using ffmpeg.
- * @param pcmBuffer - PCM audio buffer.
- * @returns MP3 audio buffer.
- */
-const convertPcmToMp3 = async (pcmBuffer: Buffer): Promise<Buffer> =>
-  runFfmpeg(
-    ["-f", "s16le", "-i", "pipe:0", ...MP3_OUTPUT_ARGS, "pipe:1"],
-    pcmBuffer
-  )
-
-/**
- * Concatenates two MP3 files.
- * @param mp3Files - Paths to MP3 files to concatenate.
- * @returns Concatenated MP3 buffer.
- */
-const concatenateMp3Files = async (mp3Files: string[]): Promise<Buffer> => {
-  const concatListFile = path.join("/tmp", `concat_${String(Date.now())}.txt`)
-
-  try {
-    const concatList = mp3Files.map((f) => `file '${f}'`).join("\n")
-    await fs.writeFile(concatListFile, concatList)
-
-    const result = await runFfmpeg([
-      "-f",
-      "concat",
-      "-safe",
-      "0",
-      "-i",
-      concatListFile,
-      "-c",
-      "copy", // No re-encoding needed
-      "pipe:1",
-    ])
-
-    await fs.unlink(concatListFile).catch(() => {
-      // Ignore cleanup errors
-    })
-    return result
-  } catch (err) {
-    await fs.unlink(concatListFile).catch(() => {
-      // Ignore cleanup errors
-    })
-    throw err
-  }
-}
-
-/**
- * Normalizes MP3 to standard settings.
- * @param mp3Buffer - MP3 audio buffer.
- * @returns Normalized MP3 buffer.
- */
-const normalizeMp3 = async (mp3Buffer: Buffer): Promise<Buffer> =>
-  runFfmpeg(
-    ["-f", "mp3", "-i", "pipe:0", ...MP3_OUTPUT_ARGS, "pipe:1"],
-    mp3Buffer
-  )
 
 /**
  * Attempts to load a chime file.
