@@ -1,13 +1,12 @@
 /** @file Express bootstrapping. */
 import express from "express"
+import generateAudio from "#controllers/audio"
 import checkHealth from "#controllers/health"
-import generateAudio from "#controllers/generateAudio"
 
 const app = express()
 app.use(express.json())
 
-// API endpoint
-app.post("/generate-audio", generateAudio)
+app.post("/audio", generateAudio)
 
 // Health check endpoint
 app.get("/health", checkHealth)
