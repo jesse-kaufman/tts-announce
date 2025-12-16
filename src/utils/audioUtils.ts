@@ -43,7 +43,7 @@ const cleanupTempFiles = (files: string[]): void => {
  */
 const loadChimeFile = async (chime: string): Promise<Buffer | null> => {
   try {
-    return await fs.readFile(`${chime}.mp3`)
+    return await normalizeMp3(await fs.readFile(`${chime}.mp3`))
   } catch {
     console.warn(`Chime file ${chime}.mp3 not found`)
   }
