@@ -1,20 +1,8 @@
 /** @file Audio format conversion utilities. */
-import { spawn } from "node:child_process"
 import fs from "node:fs/promises"
 import path from "node:path"
+import { MP3_OUTPUT_ARGS, runFfmpeg } from "#services/ffmpeg"
 import piper from "#services/piper"
-
-/** MP3 output encoding arguments. */
-const MP3_OUTPUT_ARGS = [
-  "-ar",
-  "22050",
-  "-ac",
-  "1",
-  "-c:a",
-  "libmp3lame",
-  "-b:a",
-  "48k",
-] as const
 
 /**
  * Writes MP3 buffers to temporary files for concatenation.
@@ -43,40 +31,6 @@ const cleanupTempFiles = (files: string[]): void => {
     console.error("Error cleaning up temp files:", err)
   })
 }
-
-/**
- * Runs ffmpeg with given arguments and returns output buffer.
- * @param args - FFmpeg command line arguments.
- * @param inputBuffer - Optional input buffer to pipe to stdin.
- * @returns Promise resolving to output buffer.
- */
-const runFfmpeg = async (
-  args: string[],
-  inputBuffer?: Buffer
-): Promise<Buffer> =>
-  new Promise((resolve, reject) => {
-    const ffmpeg = spawn("ffmpeg", args)
-    const chunks: Buffer[] = []
-
-    ffmpeg.stdout.on("data", (chunk: Buffer) => chunks.push(chunk))
-    ffmpeg.stderr.on("data", (data) => console.log("ffmpeg:", String(data)))
-
-    ffmpeg.on("close", (code: number) => {
-      if (code === 0) {
-        resolve(Buffer.concat(chunks))
-      } else {
-        reject(new Error(`ffmpeg exited with code ${String(code)}`))
-      }
-    })
-
-    ffmpeg.on("error", reject)
-
-    // Write input if provided
-    if (inputBuffer) {
-      ffmpeg.stdin.write(inputBuffer)
-      ffmpeg.stdin.end()
-    }
-  })
 
 /**
  * Converts PCM to MP3 using ffmpeg.
