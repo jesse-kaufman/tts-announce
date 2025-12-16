@@ -14,13 +14,25 @@ interface WyomingProtocolState {
   audioChunks: Buffer[]
 }
 
+interface SynthesizeOptions {
+  text: string
+  voice?: string
+  speaker?: number
+}
+
 /**
  * Creates a Wyoming protocol synthesize request.
- * @param text - Text for Piper to speak.
+ * @param options - Synthesis options.
  * @returns Request data string.
  */
-const createSynthesizeRequest = (text: string): string =>
-  `${JSON.stringify({ type: "synthesize", data: { text } })}\n`
+const createSynthesizeRequest = (options: SynthesizeOptions): string => {
+  const data: Record<string, unknown> = { text: options.text }
+
+  if (options.voice) data.voice = options.voice
+  if (options.speaker !== undefined) data.speaker = options.speaker
+
+  return `${JSON.stringify({ type: "synthesize", data })}\n`
+}
 
 /**
  * Extracts an audio chunk from the buffer.
@@ -141,9 +153,15 @@ const setupTimeout = (client: Socket, onTimeout: () => void): void => {
 /**
  * Synthesizes text to audio using Piper TTS service.
  * @param text - Text to convert to speech.
+ * @param voice - Optional voice name.
+ * @param speaker - Optional speaker ID.
  * @returns Promise resolving to audio buffer.
  */
-export const synthesize = async (text: string): Promise<Buffer> =>
+export const synthesize = async (
+  text: string,
+  voice?: string,
+  speaker?: number
+): Promise<Buffer> =>
   new Promise((resolve, reject) => {
     // Initialize state
     const state: WyomingProtocolState = {
@@ -156,28 +174,33 @@ export const synthesize = async (text: string): Promise<Buffer> =>
     // Connect to Wyoming socket
     const client = connectSocket()
 
-    /**
-     * Handles audio completion.
-     * @param audio - Completed audio buffer.
-     */
-    const handleComplete = (audio: Buffer): void => {
-      // Close connection
-      client.end()
-      resolve(audio)
-    }
+    // Send synthesize request on connect
+    client.on("connect", () =>
+      client.write(createSynthesizeRequest({ text, voice, speaker }))
+    )
 
+    // Handle received audio data
     client.on("data", (data: Buffer): void => {
-      processData(state, data, handleComplete)
+      // Process received data
+      processData(state, data, (audio: Buffer): void => {
+        // Close connection and resolve with audio data when complete
+        client.end()
+        resolve(audio)
+      })
     })
+
+    // Handle errors
     client.on("error", (err: Error): void => {
       // Close the connection
       client.destroy()
       console.error("Piper connection error:", err)
       reject(err)
     })
-    client.on("end", () => console.log("Piper connection closed"))
-    client.on("connect", () => client.write(createSynthesizeRequest(text)))
 
+    // Log when connection ends
+    client.on("end", () => console.log("Piper connection closed"))
+
+    // Handle timeout
     setupTimeout(client, () => reject(new Error("Piper request timeout")))
   })
 

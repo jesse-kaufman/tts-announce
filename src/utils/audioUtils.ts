@@ -7,6 +7,7 @@ import {
   normalizeMp3,
 } from "#services/ffmpeg"
 import piper from "#services/piper"
+import type { AnnounceOptions } from "#controllers/audio"
 
 /**
  * Writes MP3 buffers to temporary files for concatenation.
@@ -54,11 +55,17 @@ const getChimeAudio = async (chime: string): Promise<Buffer | null> => {
 /**
  * Gets TTS audio in predefined MP3 format.
  * @param text - Text for TTS to speak.
+ * @param voice - Voice name.
+ * @param speaker - Speaker ID.
  * @returns Audio buffer.
  */
-const getTtsAudio = async (text: string): Promise<Buffer> => {
+const getTtsAudio = async (
+  text: string,
+  voice?: string,
+  speaker?: number
+): Promise<Buffer> => {
   // Get TTS audio from Piper
-  const piperAudio = await piper.synthesize(text)
+  const piperAudio = await piper.synthesize(text, voice, speaker)
   console.log(`Received ${String(piperAudio.length)} bytes from Piper`)
 
   // Convert PCM to MP3
@@ -67,16 +74,13 @@ const getTtsAudio = async (text: string): Promise<Buffer> => {
 
 /**
  * Generates MP3 audio from text and optional chime.
- * @param text - Text to synthesize.
- * @param chime - Chime type.
+ * @param opts - Options for generating audio.
  * @returns MP3 audio buffer.
  */
-export const generateMp3 = async (
-  text: string,
-  chime: string
-): Promise<Buffer> => {
+export const generateMp3 = async (opts: AnnounceOptions): Promise<Buffer> => {
+  const { chime, text, voice, speaker } = opts
   // Get TTS audio from piper
-  const ttsBuffer = await getTtsAudio(text)
+  const ttsBuffer = await getTtsAudio(text, voice, speaker)
   // Load chime file
   const chimeBuffer = await getChimeAudio(chime)
 

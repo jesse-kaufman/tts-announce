@@ -5,27 +5,34 @@ import { generateMp3 } from "#utils/audioUtils"
 import { getCachedFile, saveCachedFile } from "#utils/cacheUtils"
 import type { RequestHandler } from "express"
 
-interface GenerateAudioRequest {
-  text: string
+interface AudioApiRequest {
   chime: string
+  text: string
   cache: boolean
+  voice?: string
+  speaker?: number
+}
+
+interface AnnounceOptions {
+  chime: string
+  text: string
+  voice?: string
+  speaker?: number
 }
 
 /**
  * Gets audio from cache or generates it.
- * @param text - Text to synthesize.
- * @param chime - Chime type.
+ * @param opts - Options for announce service.
  * @param useCache - Whether to use cache.
  * @returns Object with audio buffer and cache status.
  */
 const getAudioData = async (
-  text: string,
-  chime: string,
+  opts: AnnounceOptions,
   useCache: boolean
 ): Promise<{ audio: Buffer; fromCache: boolean }> => {
   // Try cache first
   if (useCache) {
-    const cachePath = await getCachedFile(text, chime)
+    const cachePath = await getCachedFile(opts)
 
     if (cachePath) {
       const audio = await fs.readFile(cachePath)
@@ -34,10 +41,10 @@ const getAudioData = async (
   }
 
   // Generate audio
-  const audio = await generateMp3(text, chime)
+  const audio = await generateMp3(opts)
 
   // Save cached file if set
-  if (useCache) await saveCachedFile(text, chime, audio)
+  if (useCache) await saveCachedFile(opts, audio)
 
   return { audio, fromCache: false }
 }
@@ -53,7 +60,9 @@ const getAudio: RequestHandler = async (req, res) => {
     text,
     chime = "notice",
     cache = true,
-  } = req.body as GenerateAudioRequest
+    voice,
+    speaker,
+  } = req.body as AudioApiRequest
 
   if (!text) {
     res.status(StatusCodes.BAD_REQUEST).json({ error: "text is required" })
@@ -61,12 +70,15 @@ const getAudio: RequestHandler = async (req, res) => {
   }
 
   console.log(
-    `Generating TTS for: "${text}" with chime: ${chime}, cache: ${String(cache)}`
+    `Generating TTS for: "${text}" with chime: ${chime}, voice: ${voice ?? "default"}, speaker: ${speaker ?? "default"}, cache: ${String(cache)}`
   )
 
   try {
     // Get or generate audio
-    const { audio, fromCache } = await getAudioData(text, chime, cache)
+    const { audio, fromCache } = await getAudioData(
+      { text, voice, speaker, chime },
+      cache
+    )
 
     // Send response
     res.set("Content-Type", "audio/mpeg")
@@ -81,4 +93,5 @@ const getAudio: RequestHandler = async (req, res) => {
   }
 }
 
+export type { AnnounceOptions }
 export default getAudio
