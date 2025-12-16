@@ -1,7 +1,7 @@
 /** @file Generate audio controller. */
 import fs from "node:fs/promises"
 import { StatusCodes } from "http-status-codes"
-import { generateMP3 } from "#utils/audioUtils"
+import { generateMp3 } from "#utils/audioUtils"
 import { getCachedFile, saveCachedFile } from "#utils/cacheUtils"
 import type { RequestHandler } from "express"
 
@@ -34,7 +34,7 @@ const getAudioData = async (
   }
 
   // Generate audio
-  const audio = await generateMP3(text, chime)
+  const audio = await generateMp3(text, chime)
 
   // Save cached file if set
   if (useCache) await saveCachedFile(text, chime, audio)
