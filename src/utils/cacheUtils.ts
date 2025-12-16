@@ -3,7 +3,7 @@ import crypto from "node:crypto"
 import fs from "node:fs/promises"
 import path from "node:path"
 import { CACHE_DIR, CACHE_TTL_HOURS } from "#config"
-import type { AnnounceOptions } from "#controllers/audio"
+import type { AnnounceOptions } from "#controllers/announce"
 
 /**
  * Gets cache key for text + chimeType + voice + speaker combination.

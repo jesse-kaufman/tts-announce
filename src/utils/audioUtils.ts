@@ -7,7 +7,7 @@ import {
   normalizeMp3,
 } from "#services/ffmpeg"
 import piper from "#services/piper"
-import type { AnnounceOptions } from "#controllers/audio"
+import type { AnnounceOptions } from "#controllers/announce"
 
 /**
  * Writes MP3 buffers to temporary files for concatenation.

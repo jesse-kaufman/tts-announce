@@ -1,4 +1,4 @@
-/** @file Generate audio controller. */
+/** @file Announce controller. */
 import fs from "node:fs/promises"
 import { StatusCodes } from "http-status-codes"
 import { generateAudio } from "#utils/audioUtils"
@@ -55,7 +55,7 @@ const getAnnounceData = async (
  * @param res - Response object.
  * @returns Audio buffer.
  */
-const getAudio: RequestHandler = async (req, res) => {
+const getAnnouncement: RequestHandler = async (req, res) => {
   const {
     text,
     chime = "notice",
@@ -93,4 +93,4 @@ const getAudio: RequestHandler = async (req, res) => {
 }
 
 export type { AnnounceOptions }
-export default getAudio
+export default getAnnouncement
