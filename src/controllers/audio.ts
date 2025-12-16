@@ -1,7 +1,7 @@
 /** @file Generate audio controller. */
 import fs from "node:fs/promises"
 import { StatusCodes } from "http-status-codes"
-import { generateMp3 } from "#utils/audioUtils"
+import { generateAudio } from "#utils/audioUtils"
 import { getCachedFile, saveCachedFile } from "#utils/cacheUtils"
 import type { RequestHandler } from "express"
 
@@ -26,7 +26,7 @@ interface AnnounceOptions {
  * @param useCache - Whether to use cache.
  * @returns Object with audio buffer and cache status.
  */
-const getAudioData = async (
+const getAnnounceData = async (
   opts: AnnounceOptions,
   useCache: boolean
 ): Promise<{ audio: Buffer; fromCache: boolean }> => {
@@ -41,7 +41,7 @@ const getAudioData = async (
   }
 
   // Generate audio
-  const audio = await generateMp3(opts)
+  const audio = await generateAudio(opts)
 
   // Save cached file if set
   if (useCache) await saveCachedFile(opts, audio)
@@ -74,11 +74,10 @@ const getAudio: RequestHandler = async (req, res) => {
   )
 
   try {
+    // Setup announcement service options
+    const announceOpts = { text, voice, speaker, chime }
     // Get or generate audio
-    const { audio, fromCache } = await getAudioData(
-      { text, voice, speaker, chime },
-      cache
-    )
+    const { audio, fromCache } = await getAnnounceData(announceOpts, cache)
 
     // Send response
     res.set("Content-Type", "audio/mpeg")

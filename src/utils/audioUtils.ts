@@ -77,7 +77,7 @@ const getTtsAudio = async (
  * @param opts - Options for generating audio.
  * @returns MP3 audio buffer.
  */
-export const generateMp3 = async (opts: AnnounceOptions): Promise<Buffer> => {
+export const generateAudio = async (opts: AnnounceOptions): Promise<Buffer> => {
   const { chime, text, voice, speaker } = opts
   // Get TTS audio from piper
   const ttsBuffer = await getTtsAudio(text, voice, speaker)
@@ -98,4 +98,4 @@ export const generateMp3 = async (opts: AnnounceOptions): Promise<Buffer> => {
   }
 }
 
-export default generateMp3
+export default generateAudio
