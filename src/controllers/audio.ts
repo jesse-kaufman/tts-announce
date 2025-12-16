@@ -48,7 +48,7 @@ const getAudioData = async (
  * @param res - Response object.
  * @returns Audio buffer.
  */
-const generateAudio: RequestHandler = async (req, res) => {
+const getAudio: RequestHandler = async (req, res) => {
   const {
     text,
     chime = "notice",
@@ -81,4 +81,4 @@ const generateAudio: RequestHandler = async (req, res) => {
   }
 }
 
-export default generateAudio
+export default getAudio
