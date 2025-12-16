@@ -41,7 +41,7 @@ const cleanupTempFiles = (files: string[]): void => {
  * @param chime - Type of chime to load.
  * @returns Chime buffer or null if not found.
  */
-const loadChimeFile = async (chime: string): Promise<Buffer | null> => {
+const getChimeAudio = async (chime: string): Promise<Buffer | null> => {
   try {
     return await normalizeMp3(await fs.readFile(`${chime}.mp3`))
   } catch {
@@ -49,6 +49,20 @@ const loadChimeFile = async (chime: string): Promise<Buffer | null> => {
   }
 
   return null
+}
+
+/**
+ * Gets TTS audio in predefined MP3 format.
+ * @param text - Text for TTS to speak.
+ * @returns Audio buffer.
+ */
+const getTtsAudio = async (text: string): Promise<Buffer> => {
+  // Get TTS audio from Piper
+  const piperAudio = await piper.synthesize(text)
+  console.log(`Received ${String(piperAudio.length)} bytes from Piper`)
+
+  // Convert PCM to MP3
+  return await convertPcmToMp3(piperAudio)
 }
 
 /**
@@ -61,30 +75,22 @@ export const generateMp3 = async (
   text: string,
   chime: string
 ): Promise<Buffer> => {
-  // Get TTS audio from Piper
-  const piperAudio = await piper.synthesize(text)
-  console.log(`Received ${String(piperAudio.length)} bytes from Piper`)
-
-  // Convert PCM to MP3
-  const ttsMp3 = await convertPcmToMp3(piperAudio)
-
+  // Get TTS audio from piper
+  const ttsBuffer = await getTtsAudio(text)
   // Load chime file
-  const chimeBuffer = await loadChimeFile(chime)
+  const chimeBuffer = await getChimeAudio(chime)
 
   // Return TTS-only if no chime
-  if (!chimeBuffer) return ttsMp3
+  if (!chimeBuffer) return ttsBuffer
 
-  // Normalize chime to match TTS settings and concatenate
-  const chimeMp3 = await normalizeMp3(chimeBuffer)
-  const tempFiles = await writeTempMp3Files([chimeMp3, ttsMp3])
+  // Concatenate mp3s to get final audio data
+  const tempFiles = await writeTempFiles([chimeBuffer, ttsBuffer])
 
   try {
     const result = await concatenateMp3Files(tempFiles)
-    cleanupTempFiles(tempFiles)
     return result
-  } catch (err) {
+  } finally {
     cleanupTempFiles(tempFiles)
-    throw err
   }
 }
 
