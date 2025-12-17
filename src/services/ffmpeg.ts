@@ -2,6 +2,7 @@
 import { spawn } from "node:child_process"
 import fs from "node:fs/promises"
 import path from "node:path"
+import logger from "#utils/logger"
 
 /** MP3 output encoding arguments. */
 export const MP3_OUTPUT_ARGS = [
@@ -13,6 +14,8 @@ export const MP3_OUTPUT_ARGS = [
   "libmp3lame",
   "-b:a",
   "48k",
+  "-f",
+  "mp3",
 ] as const
 
 /**
@@ -32,8 +35,10 @@ export const runFfmpeg = async (
     // Add chunk data on stdout to buffer
     ffmpeg.stdout.on("data", (chunk: Buffer) => chunks.push(chunk))
 
-    // Log data on stderr to console
-    ffmpeg.stderr.on("data", (data) => console.log("ffmpeg:", data))
+    // Log debug data on stderr to console
+    ffmpeg.stderr.on("data", (data: Buffer) =>
+      logger.trace(`ffmpeg stderr: ${data.toString()}`)
+    )
 
     // Resolve or reject based on exit code from ffmpeg
     ffmpeg.on("close", (code: number) => {
@@ -68,11 +73,26 @@ export const normalizeMp3 = async (mp3Buffer: Buffer): Promise<Buffer> =>
 /**
  * Converts PCM to MP3 using ffmpeg.
  * @param pcmBuffer - PCM audio buffer.
+ * @param sampleRate - Input sample rate (default: 22050).
  * @returns MP3 audio buffer.
  */
-export const convertPcmToMp3 = async (pcmBuffer: Buffer): Promise<Buffer> =>
+export const convertPcmToMp3 = async (
+  pcmBuffer: Buffer,
+  sampleRate = 22_050
+): Promise<Buffer> =>
   runFfmpeg(
-    ["-f", "s16le", "-i", "pipe:0", ...MP3_OUTPUT_ARGS, "pipe:1"],
+    [
+      "-f",
+      "s16le",
+      "-ar",
+      String(sampleRate),
+      "-ac",
+      "1",
+      "-i",
+      "pipe:0",
+      ...MP3_OUTPUT_ARGS,
+      "pipe:1",
+    ],
     pcmBuffer
   )
 
@@ -98,7 +118,9 @@ export const concatenateMp3Files = async (
       "-i",
       concatListFile,
       "-c",
-      "copy", // No re-encoding needed
+      "copy",
+      "-f",
+      "mp3",
       "pipe:1",
     ])
 
