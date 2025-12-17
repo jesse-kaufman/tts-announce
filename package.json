@@ -19,9 +19,9 @@
     "lint:fix": "eslint . --fix",
     "type": "tsc --noEmit || true",
     "type:watch": "tsc --noEmit --watch || true",
-    "dev": "NODE_ENV=development tsx watch server.ts",
+    "dev": "NODE_ENV=development tsx watch --env-file=.env.development server.ts",
     "release": "tsx scripts/release.ts",
-    "start": "FORCE_COLOR=1 tsx server.ts"
+    "start": "FORCE_COLOR=1 tsx --env-file=.env server.ts"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.2.0",
