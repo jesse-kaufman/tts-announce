@@ -1,6 +1,7 @@
 /** @file Audio format conversion utilities. */
 import fs from "node:fs/promises"
 import path from "node:path"
+import { CHIMES_DIR } from "#config"
 import {
   concatenateMp3Files,
   convertPcmToMp3,
@@ -43,8 +44,10 @@ const cleanupTempFiles = (files: string[]): void => {
  * @returns Chime buffer or null if not found.
  */
 const getChimeAudio = async (chime: string): Promise<Buffer | null> => {
+  const chimeFilePath = path.join(CHIMES_DIR, `${chime}.mp3`)
+
   try {
-    return await normalizeMp3(await fs.readFile(`${chime}.mp3`))
+    return await normalizeMp3(await fs.readFile(chimeFilePath))
   } catch {
     console.warn(`Chime file ${chime}.mp3 not found`)
   }
