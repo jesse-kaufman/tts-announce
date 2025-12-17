@@ -34,9 +34,6 @@ db.json
 !.env.example
 *.sqlite
 
-# Exclude dist from frontend
-dist
-
 # Potentially secret data
 .env
 data
