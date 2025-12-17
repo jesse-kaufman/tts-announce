@@ -18,8 +18,7 @@ dotenv.config({
 })
 
 /** API URL prefix. */
-export const API_PREFIX: string =
-  process.env.API_PREFIX || `/api/v${API_VERSION}`
+export const API_PREFIX = `${process.env.API_PREFIX || "/api"}/v${API_VERSION}`
 
 /** Default port for API. */
 export const PORT = Number(process.env.PORT || 3000)
