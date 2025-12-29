@@ -11,7 +11,7 @@
  */
 export const pcmToWav = (
   pcmData: Buffer,
-  sampleRate = 22_050,
+  sampleRate = 24_000,
   channels = 1,
   bitDepth = 16
 ): Buffer => {
