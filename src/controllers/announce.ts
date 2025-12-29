@@ -51,7 +51,6 @@ const getAnnounceData = async (
   // Generate audio
   const audio = await generateAudio(opts)
 
-  console.log(cachePrefix)
   // Save cached file always (this file will be sent to smart speakers)
   const filePath = await saveCachedFile(opts, audio)
 
