@@ -1,36 +1,25 @@
-name: construction-loans
-
 services:
-  frontend:
-    image: docker.pbt.local/construction-loans-frontend:latest
+  api:
     build:
       context: .
-      dockerfile: docker/frontend/Dockerfile
-    env_file: .env.development
-    networks:
-      - proxy
-      - private
-    restart: always
+      dockerfile: docker/Dockerfile
+    container_name: tts-announce
+    restart: unless-stopped
     ports:
-      - 8083:80
-    volumes:
-      - ./data/logs/frontend:/var/log/nginx
-    depends_on:
-      - backend
-
-  backend:
-    image: docker.pbt.local/construction-loans-backend:latest
-    build:
-      context: .
-      dockerfile: docker/backend/Dockerfile
-    env_file: .env.development
-    volumes:
-      - ./data/backend:/data
+      - 8083:8083
     networks:
-      - private
-    restart: always
+      - piper
+    environment:
+      - PIPER_HOST=piper
+      - PIPER_PORT=10200
+      - CHIMES_DIR=/chimes
+      - CACHE_DIR=/cache
+      - CACHE_TTL_HOURS=24
+      - PORT=8083
+    volumes:
+      - ./data/chimes:/chimes:ro
+      - ./data/cache:/cache
 
 networks:
-  proxy:
-  private:
-    internal: true
+  piper:
+    external: true
