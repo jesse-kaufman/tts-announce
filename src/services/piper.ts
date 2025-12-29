@@ -8,6 +8,9 @@ type WyomingEvent =
   | { type: "audio-stop" }
   | { type: string; data_length?: number; payload_length?: number }
 
+const BYTE_OPEN_BRACE = 0x7b // '{'
+const BYTE_QUOTE = 0x22 // '"'
+
 interface WyomingProtocolState {
   buffer: Buffer
   expectingAudio: boolean
@@ -38,13 +41,16 @@ const createSynthesizeRequest = (options: SynthesizeOptions): string => {
 }
 
 /**
- * Skips metadata section from buffer.
+ * Skips additional data section from buffer.
+ * The additional data is EXACTLY data_length bytes of UTF-8 JSON (not line-delimited).
  * @param state - Protocol state.
- * @returns True if metadata was skipped, false if more data needed.
+ * @returns True if data was skipped, false if more data needed.
  */
 const skipMetadata = (state: WyomingProtocolState): boolean => {
+  // Data_length specifies exact number of bytes, not a line
   if (state.buffer.length < state.currentDataLength) return false
 
+  // Skip exactly data_length bytes
   state.buffer = state.buffer.subarray(state.currentDataLength)
   state.expectingMetadata = false
   state.currentDataLength = 0
@@ -104,9 +110,12 @@ const handleWyomingEvent = (
 
   if (jsonEnd === -1) return true
 
-  try {
-    const event = JSON.parse(line.slice(0, jsonEnd)) as WyomingEvent
+  const jsonString = line.slice(0, jsonEnd)
 
+  try {
+    const event = JSON.parse(jsonString) as WyomingEvent
+
+    // Handle audio-chunk events
     if (event.type === "audio-chunk" && event.payload_length) {
       // Set state to expect metadata then audio
       if (event.data_length && event.data_length > 0) {
@@ -119,13 +128,25 @@ const handleWyomingEvent = (
       return true
     }
 
+    // Handle audio-stop events
     if (event.type === "audio-stop") {
       onComplete(Buffer.concat(state.audioChunks))
       return false
     }
 
+    // Skip other events (like audio-start, metadata-only events, etc.)
+    if (event.type) {
+      logger.debug(`Skipping Wyoming event type: ${event.type}`)
+    }
     return true
   } catch {
+    // JSON parse failed - this line contains garbage
+    // This shouldn't happen if protocol is correct
+    const maxPreviewLength = 50
+    logger.warn(
+      `Failed to parse Wyoming event, skipping line: ${line.slice(0, maxPreviewLength)}...`
+    )
+    // Continue processing - the line was already consumed
     return true
   }
 }
@@ -140,17 +161,34 @@ const processWyomingEvent = (
   state: WyomingProtocolState,
   onComplete: (audio: Buffer) => void
 ): boolean => {
-  const openBrace = state.buffer.indexOf("{")
-  if (openBrace === -1) return false
+  if (state.buffer.length === 0) return false
 
-  if (openBrace > 0) {
-    state.buffer = state.buffer.subarray(openBrace)
+  // Wyoming headers MUST start with '{"' - validate both bytes
+  // This prevents mistaking a '{' byte in audio data for a header
+  if (state.buffer.length < 2) return false
+
+  if (state.buffer[0] !== BYTE_OPEN_BRACE) {
+    // Not a '{', skip this byte
+    state.buffer = state.buffer.subarray(1)
+    return true
   }
 
+  if (state.buffer[1] !== BYTE_QUOTE) {
+    // Have '{' but not followed by '"', this is binary data not a JSON header
+    // Skip the '{' byte and continue
+    state.buffer = state.buffer.subarray(1)
+    return true
+  }
+
+  // Now we have '{"' which is very likely a valid Wyoming header
+  // Find the newline that should end the JSON header
   const newlineIndex = state.buffer.indexOf("\n")
   if (newlineIndex === -1) return false
 
+  // Extract the JSON header line
   const line = state.buffer.subarray(0, newlineIndex).toString("utf8")
+
+  // Consume the line from the buffer
   state.buffer = state.buffer.subarray(newlineIndex + 1)
 
   return handleWyomingEvent(state, line, onComplete)
