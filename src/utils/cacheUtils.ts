@@ -63,6 +63,5 @@ export const saveCachedFile = async (
   const cacheKey = getCacheKey(opts)
   const cachePath = path.join(CACHE_DIR, `${cacheKey}.mp3`)
   await fs.writeFile(cachePath, mp3Buffer)
-  console.log(`Cached: ${cacheKey}`)
   return cachePath
 }
