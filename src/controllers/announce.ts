@@ -31,7 +31,7 @@ interface AnnounceOptions {
 const getAnnounceData = async (
   opts: AnnounceOptions,
   useCache: boolean
-): Promise<{ audio: Buffer; fromCache: boolean; filePath: string }> => {
+): Promise<{ audio: Buffer; fromCache: boolean; filename: string }> => {
   const cachePrefix = `${CACHE_DIR.replace("./", "")}/`
 
   // Try cache first
@@ -43,7 +43,7 @@ const getAnnounceData = async (
       return {
         audio,
         fromCache: true,
-        filePath: cachePath.replace(cachePrefix, ""),
+        filename: cachePath.replace(cachePrefix, ""),
       }
     }
   }
@@ -52,12 +52,12 @@ const getAnnounceData = async (
   const audio = await generateAudio(opts)
 
   // Save cached file always (this file will be sent to smart speakers)
-  const filePath = await saveCachedFile(opts, audio)
+  const filename = await saveCachedFile(opts, audio)
 
   return {
     audio,
     fromCache: false,
-    filePath: filePath.replace(cachePrefix, ""),
+    filename: filename.replace(cachePrefix, ""),
   }
 }
 
@@ -90,7 +90,7 @@ const getAnnouncement: RequestHandler = async (req, res) => {
     // Setup announcement service options
     const announceOpts = { text, voice, speaker, chime }
     // Get or generate audio
-    const { audio, fromCache, filePath } = await getAnnounceData(
+    const { audio, fromCache, filename } = await getAnnounceData(
       announceOpts,
       cache
     )
@@ -105,7 +105,7 @@ const getAnnouncement: RequestHandler = async (req, res) => {
     // Send audio buffer (default behavior)
     res.set("Content-Type", "audio/mpeg")
     res.set("X-Cache", fromCache ? "HIT" : "MISS")
-    res.set("X-Cache-Filename", filePath)
+    res.set("X-Cache-Filename", filename)
     res.send(audio)
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error"
