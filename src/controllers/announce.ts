@@ -1,6 +1,7 @@
 /** @file Announce controller. */
 import fs from "node:fs/promises"
 import { StatusCodes } from "http-status-codes"
+import { CACHE_DIR } from "#config"
 import { generateAudio } from "#utils/audioUtils"
 import { getCachedFile, saveCachedFile } from "#utils/cacheUtils"
 import type { RequestHandler } from "express"
@@ -11,6 +12,7 @@ interface AudioApiRequest {
   cache: boolean
   voice?: string
   speaker?: number
+  filenameOnly?: boolean
 }
 
 interface AnnounceOptions {
@@ -24,29 +26,40 @@ interface AnnounceOptions {
  * Gets audio from cache or generates it.
  * @param opts - Options for announce service.
  * @param useCache - Whether to use cache.
- * @returns Object with audio buffer and cache status.
+ * @returns Object with audio buffer, cache status, and file path.
  */
 const getAnnounceData = async (
   opts: AnnounceOptions,
   useCache: boolean
-): Promise<{ audio: Buffer; fromCache: boolean }> => {
+): Promise<{ audio: Buffer; fromCache: boolean; filePath: string }> => {
+  const cachePrefix = `${CACHE_DIR.replace("./", "")}/`
+
   // Try cache first
   if (useCache) {
     const cachePath = await getCachedFile(opts)
 
     if (cachePath) {
       const audio = await fs.readFile(cachePath)
-      return { audio, fromCache: true }
+      return {
+        audio,
+        fromCache: true,
+        filePath: cachePath.replace(cachePrefix, ""),
+      }
     }
   }
 
   // Generate audio
   const audio = await generateAudio(opts)
 
-  // Save cached file if set
-  if (useCache) await saveCachedFile(opts, audio)
+  console.log(cachePrefix)
+  // Save cached file always (this file will be sent to smart speakers)
+  const filePath = await saveCachedFile(opts, audio)
 
-  return { audio, fromCache: false }
+  return {
+    audio,
+    fromCache: false,
+    filePath: filePath.replace(cachePrefix, ""),
+  }
 }
 
 /**
@@ -62,6 +75,7 @@ const getAnnouncement: RequestHandler = async (req, res) => {
     cache = true,
     voice,
     speaker,
+    filenameOnly = false,
   } = req.body as AudioApiRequest
 
   if (!text) {
@@ -70,18 +84,29 @@ const getAnnouncement: RequestHandler = async (req, res) => {
   }
 
   console.log(
-    `Generating TTS for: "${text}" with chime: ${chime}, voice: ${voice ?? "default"}, speaker: ${speaker ?? "default"}, cache: ${cache}`
+    `Generating TTS for: "${text}" with chime: ${chime}, voice: ${voice ?? "default"}, speaker: ${speaker ?? "default"}, cache: ${cache}, filenameOnly: ${filenameOnly}`
   )
 
   try {
     // Setup announcement service options
     const announceOpts = { text, voice, speaker, chime }
     // Get or generate audio
-    const { audio, fromCache } = await getAnnounceData(announceOpts, cache)
+    const { audio, fromCache, filePath } = await getAnnounceData(
+      announceOpts,
+      cache
+    )
 
-    // Send response
+    // Return file path as JSON if requested
+    if (filenameOnly) {
+      res.set("X-Cache", fromCache ? "HIT" : "MISS")
+      res.json({ filename, cached: fromCache })
+      return
+    }
+
+    // Send audio buffer (default behavior)
     res.set("Content-Type", "audio/mpeg")
     res.set("X-Cache", fromCache ? "HIT" : "MISS")
+    res.set("X-Cache-Filename", filePath)
     res.send(audio)
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error"
