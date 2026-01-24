@@ -39,9 +39,12 @@ const writeBuffersToTempFiles = async (
   ttsBuffer: Buffer
 ): Promise<{ chimeFile: string; ttsFile: string }> => {
   const now = String(Date.now())
+
+  // Generate temporary filenames for chime and TTS buffers
   const chimeFile = path.join("/tmp", `mp3_${now}_chime.mp3`)
   const ttsFile = path.join("/tmp", `mp3_${now}_tts.mp3`)
 
+  // Write buffers to files
   await Promise.all([
     fs.writeFile(chimeFile, chimeBuffer),
     fs.writeFile(ttsFile, ttsBuffer),
