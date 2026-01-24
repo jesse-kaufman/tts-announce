@@ -4,12 +4,15 @@ import fs from "node:fs/promises"
 import path from "node:path"
 import logger from "#utils/logger"
 
+/** Set sample rate to 22,050 as required by Alex devices. */
+const MP3_SAMPLE_RATE = ["-ar", "22050"]
+/** Set audio channels to 1 as required by Alex devices. */
+const MP3_CHANNELS = ["-ac", "1"]
+
 /** MP3 output encoding arguments. */
 const MP3_OUTPUT_ARGS = [
-  "-ar",
-  "22050",
-  "-ac",
-  "1",
+  ...MP3_SAMPLE_RATE,
+  ...MP3_CHANNELS,
   "-c:a",
   "libmp3lame",
   "-b:a",
@@ -108,21 +111,15 @@ export const normalizeMp3 = async (mp3Buffer: Buffer): Promise<Buffer> =>
 /**
  * Converts PCM to MP3 using ffmpeg.
  * @param pcmBuffer - PCM audio buffer.
- * @param sampleRate - Input sample rate (default: 22050).
  * @returns MP3 audio buffer.
  */
-export const convertPcmToMp3 = async (
-  pcmBuffer: Buffer,
-  sampleRate = 22_050
-): Promise<Buffer> =>
+export const convertPcmToMp3 = async (pcmBuffer: Buffer): Promise<Buffer> =>
   runFfmpeg(
     [
       "-f",
       "s16le",
-      "-ar",
-      String(sampleRate),
-      "-ac",
-      "1",
+      ...MP3_OUTPUT_ARGS,
+      ...MP3_CHANNELS,
       "-i",
       "pipe:0",
       ...MP3_OUTPUT_ARGS,
