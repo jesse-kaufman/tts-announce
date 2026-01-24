@@ -81,10 +81,12 @@ const extractAudioChunk = (state: WyomingProtocolState): boolean => {
  * @param onComplete - Completion callback.
  * @returns True if processing should continue, false if complete.
  */
+// eslint-disable-next-line max-lines-per-function, max-statements
 const handleWyomingEvent = (
   state: WyomingProtocolState,
   line: string,
   onComplete: (audio: Buffer) => void
+  // eslint-disable-next-line complexity
 ): boolean => {
   let braceCount = 0
   let inString = false
@@ -250,6 +252,7 @@ const setupTimeout = (client: Socket, onTimeout: () => void): void => {
  * @param speaker - Optional speaker ID.
  * @returns Promise resolving to audio buffer.
  */
+// eslint-disable-next-line max-lines-per-function
 export const synthesize = async (
   text: string,
   voice?: string,
