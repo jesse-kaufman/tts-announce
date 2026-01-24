@@ -11,34 +11,6 @@ import piper from "#services/piper"
 import type { AnnounceOptions } from "#controllers/announce"
 
 /**
- * Writes MP3 buffers to temporary files for concatenation.
- * @param mp3Buffers - Array of MP3 buffers to write.
- * @returns Array of temporary file paths.
- */
-const writeTempFiles = async (mp3Buffers: Buffer[]): Promise<string[]> => {
-  const now = String(Date.now())
-  const tempFiles = mp3Buffers.map((_, i) =>
-    path.join("/tmp", `mp3_${now}_${String(i)}.mp3`)
-  )
-
-  await Promise.all(
-    tempFiles.map(async (file, i) => fs.writeFile(file, mp3Buffers[i]))
-  )
-
-  return tempFiles
-}
-
-/**
- * Cleans up temporary files.
- * @param files - Temporary file paths to clean up.
- */
-const cleanupTempFiles = (files: string[]): void => {
-  Promise.all(files.map(async (f) => fs.unlink(f))).catch((err: unknown) => {
-    console.error("Error cleaning up temp files:", err)
-  })
-}
-
-/**
  * Attempts to load a chime file.
  * @param chime - Type of chime to load.
  * @returns Chime buffer or null if not found.
@@ -100,14 +72,7 @@ export const generateAudio = async (
   if (!ttsBuffer) return chimeBuffer
 
   // Concatenate mp3s to get final audio data
-  const tempFiles = await writeTempFiles([chimeBuffer, ttsBuffer])
-
-  try {
-    const result = await concatenateMp3Files(tempFiles)
-    return result
-  } finally {
-    cleanupTempFiles(tempFiles)
-  }
+  return await concatenateMp3Files(chimeBuffer, ttsBuffer)
 }
 
 export default generateAudio

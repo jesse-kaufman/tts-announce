@@ -4,6 +4,38 @@ import fs from "node:fs/promises"
 import path from "node:path"
 import logger from "#utils/logger"
 
+/**
+ * Cleans up temporary files.
+ * @param files - Temporary file paths to clean up.
+ */
+const cleanupTempFiles = (files: string[]): void => {
+  Promise.all(files.map(async (f) => fs.unlink(f))).catch((err: unknown) => {
+    console.error("Error cleaning up temp files:", err)
+  })
+}
+
+/**
+ * Writes MP3 buffers to temporary files for concatenation.
+ * @param chimeBuffer - Audio buffer for chime.
+ * @param ttsBuffer - Audio buffer for TTS announcement.
+ * @returns Array of temporary file paths.
+ */
+const writeBuffersToTempFiles = async (
+  chimeBuffer: Buffer,
+  ttsBuffer: Buffer
+): Promise<{ chimeFile: string; ttsFile: string }> => {
+  const now = String(Date.now())
+  const chimeFile = path.join("/tmp", `mp3_${now}_chime.mp3`)
+  const ttsFile = path.join("/tmp", `mp3_${now}_tts.mp3`)
+
+  await Promise.all([
+    fs.writeFile(chimeFile, chimeBuffer),
+    fs.writeFile(ttsFile, ttsBuffer),
+  ])
+
+  return { chimeFile, ttsFile }
+}
+
 /** MP3 output encoding arguments. */
 export const MP3_OUTPUT_ARGS = [
   "-ar",
@@ -98,19 +130,28 @@ export const convertPcmToMp3 = async (
 
 /**
  * Concatenates two MP3 files.
- * @param mp3Files - Paths to MP3 files to concatenate.
+ * @param chimeBuffer - Audio buffer for chime.
+ * @param ttsBuffer - Audio buffer for TTS announcement.
  * @returns Concatenated MP3 buffer.
  */
 export const concatenateMp3Files = async (
-  mp3Files: string[]
+  chimeBuffer: Buffer,
+  ttsBuffer: Buffer
 ): Promise<Buffer> => {
   const concatListFile = path.join("/tmp", `concat_${Date.now()}.txt`)
 
+  // Write buffers to file so they can be concatenated and converted by ffmpeg
+  const { chimeFile, ttsFile } = await writeBuffersToTempFiles(
+    chimeBuffer,
+    ttsBuffer
+  )
+
+  // Concatenate mp3s to get final audio data
   try {
-    const concatList = mp3Files.map((f) => `file '${f}'`).join("\n")
+    const concatList = `file '${chimeFile}'\nfile '${ttsFile}'`
     await fs.writeFile(concatListFile, concatList)
 
-    const result = await runFfmpeg([
+    return await runFfmpeg([
       "-f",
       "concat",
       "-safe",
@@ -123,11 +164,7 @@ export const concatenateMp3Files = async (
       "mp3",
       "pipe:1",
     ])
-
-    void fs.unlink(concatListFile).catch()
-    return result
-  } catch (err) {
-    void fs.unlink(concatListFile).catch()
-    throw err
+  } finally {
+    cleanupTempFiles([chimeFile, ttsFile, concatListFile])
   }
 }
