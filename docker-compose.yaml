@@ -16,6 +16,9 @@ services:
       - CACHE_DIR=/cache
       - CACHE_TTL_HOURS=24
       - PORT=8083
+    read_only: true
+    tmpfs:
+      - /tmp
     volumes:
       - ./data/chimes:/chimes:ro
       - ./data/cache:/cache
