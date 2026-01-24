@@ -275,7 +275,7 @@ export const synthesize = async (
     const client = connectSocket()
 
     const request = createSynthesizeRequest({ text, voice, speaker })
-    logger.debug(request)
+
     // Send synthesize request on connect
     client.on("connect", () => client.write(request))
 
