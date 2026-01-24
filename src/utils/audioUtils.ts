@@ -19,7 +19,8 @@ const getChimeAudio = async (chime: string): Promise<Buffer | null> => {
   const chimeFilePath = path.join(CHIMES_DIR, `${chime}.mp3`)
 
   try {
-    return await normalizeMp3(await fs.readFile(chimeFilePath))
+    const chimeBuffer = await fs.readFile(chimeFilePath)
+    return await normalizeMp3(chimeBuffer)
   } catch {
     console.warn(`Chime file ${chime}.mp3 not found`)
   }
