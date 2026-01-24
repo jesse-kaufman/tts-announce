@@ -1,4 +1,4 @@
-/** @file Audio format conversion utilities. */
+/** @file Audio generation utilities. */
 import fs from "node:fs/promises"
 import path from "node:path"
 import { CHIMES_DIR } from "#config"
