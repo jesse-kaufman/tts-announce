@@ -8,7 +8,7 @@ import type { RequestHandler } from "express"
 
 interface AudioApiRequest {
   chime: string
-  text: string
+  text?: string
   cache: boolean
   voice?: string
   speaker?: number
@@ -17,7 +17,7 @@ interface AudioApiRequest {
 
 interface AnnounceOptions {
   chime: string
-  text: string
+  text?: string
   voice?: string
   speaker?: number
 }
@@ -51,6 +51,8 @@ const getAnnounceData = async (
   // Generate audio
   const audio = await generateAudio(opts)
 
+  if (audio == null) throw new Error("No audio data generated")
+
   // Save cached file always (this file will be sent to smart speakers)
   const filename = await saveCachedFile(opts, audio)
 
@@ -77,13 +79,8 @@ const getAnnouncement: RequestHandler = async (req, res) => {
     filenameOnly = false,
   } = req.body as AudioApiRequest
 
-  if (!text) {
-    res.status(StatusCodes.BAD_REQUEST).json({ error: "text is required" })
-    return
-  }
-
   console.log(
-    `Generating TTS for: "${text}" with chime: ${chime}, voice: ${voice ?? "default"}, speaker: ${speaker ?? "default"}, cache: ${cache}, filenameOnly: ${filenameOnly}`
+    `Generating TTS for: '${text ?? "[no text]"}' with chime: ${chime}, voice: ${voice ?? "default"}, speaker: ${speaker ?? "default"}, cache: ${cache}, filenameOnly: ${filenameOnly}`
   )
 
   try {

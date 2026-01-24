@@ -63,10 +63,15 @@ const getChimeAudio = async (chime: string): Promise<Buffer | null> => {
  * @returns Audio buffer.
  */
 const getTtsAudio = async (
-  text: string,
+  text?: string,
   voice?: string,
   speaker?: number
-): Promise<Buffer> => {
+): Promise<Buffer | null> => {
+  // If text is undefined or null, return null
+  if (text == null) return null
+  // If text trims to emtpy string, return null
+  if (typeof text === "string" && text.trim() === "") return null
+
   // Get TTS audio from Piper
   const piperAudio = await piper.synthesize(text, voice, speaker)
   console.log(`Received ${String(piperAudio.length)} bytes from Piper`)
@@ -80,15 +85,19 @@ const getTtsAudio = async (
  * @param opts - Options for generating audio.
  * @returns MP3 audio buffer.
  */
-export const generateAudio = async (opts: AnnounceOptions): Promise<Buffer> => {
+export const generateAudio = async (
+  opts: AnnounceOptions
+): Promise<Buffer | null> => {
   const { chime, text, voice, speaker } = opts
   // Get TTS audio from piper
   const ttsBuffer = await getTtsAudio(text, voice, speaker)
   // Load chime file
   const chimeBuffer = await getChimeAudio(chime)
 
-  // Return TTS-only if no chime
+  // Return only TTS if no chime
   if (!chimeBuffer) return ttsBuffer
+  // Return only chime if no TTS
+  if (!ttsBuffer) return chimeBuffer
 
   // Concatenate mp3s to get final audio data
   const tempFiles = await writeTempFiles([chimeBuffer, ttsBuffer])
