@@ -116,12 +116,14 @@ export const normalizeMp3 = async (mp3Buffer: Buffer): Promise<Buffer> =>
 export const convertPcmToMp3 = async (pcmBuffer: Buffer): Promise<Buffer> =>
   runFfmpeg(
     [
+      // Input format options (must come before -i)
       "-f",
       "s16le",
-      ...MP3_OUTPUT_ARGS,
+      ...MP3_SAMPLE_RATE,
       ...MP3_CHANNELS,
       "-i",
       "pipe:0",
+      // Output format options (must come after -i)
       ...MP3_OUTPUT_ARGS,
       "pipe:1",
     ],
