@@ -71,6 +71,7 @@ const getAnnounceData = async (
  * @param res - Response object.
  * @returns Audio buffer.
  */
+// eslint-disable-next-line complexity
 const getAnnouncement: RequestHandler = async (req, res) => {
   const {
     text,
