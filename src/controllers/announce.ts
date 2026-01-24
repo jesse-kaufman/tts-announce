@@ -6,6 +6,7 @@ import { generateAudio } from "#utils/audioUtils"
 import { getCachedFile, saveCachedFile } from "#utils/cacheUtils"
 import type { RequestHandler } from "express"
 
+/** Incoming API request. */
 interface AudioApiRequest {
   chime: string
   text?: string
@@ -15,6 +16,7 @@ interface AudioApiRequest {
   filenameOnly?: boolean
 }
 
+/** Options sent to getAnnounceData(). */
 interface AnnounceOptions {
   chime: string
   text?: string
