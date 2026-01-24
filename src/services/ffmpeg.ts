@@ -59,7 +59,7 @@ const writeBuffersToTempFiles = async (
  * @param inputBuffer - Optional input buffer to pipe to stdin.
  * @returns Promise resolving to output buffer.
  */
-export const runFfmpeg = async (
+const runFfmpeg = async (
   args: string[],
   inputBuffer?: Buffer
 ): Promise<Buffer> =>
