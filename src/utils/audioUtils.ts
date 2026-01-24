@@ -42,8 +42,8 @@ const getTtsAudio = async (
 ): Promise<Buffer | null> => {
   // If text is undefined or null, return null
   if (text == null) return null
-  // If text trims to emtpy string, return null
-  if (typeof text === "string" && text.trim() === "") return null
+  // If text trims to empty string, return null
+  if (text.trim() === "") return null
 
   // Get TTS audio from Piper
   const piperAudio = await piper.synthesize(text, voice, speaker)
