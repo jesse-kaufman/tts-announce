@@ -4,6 +4,20 @@ import fs from "node:fs/promises"
 import path from "node:path"
 import logger from "#utils/logger"
 
+/** MP3 output encoding arguments. */
+const MP3_OUTPUT_ARGS = [
+  "-ar",
+  "22050",
+  "-ac",
+  "1",
+  "-c:a",
+  "libmp3lame",
+  "-b:a",
+  "48k",
+  "-f",
+  "mp3",
+] as const
+
 /**
  * Cleans up temporary files.
  * @param files - Temporary file paths to clean up.
@@ -35,20 +49,6 @@ const writeBuffersToTempFiles = async (
 
   return { chimeFile, ttsFile }
 }
-
-/** MP3 output encoding arguments. */
-export const MP3_OUTPUT_ARGS = [
-  "-ar",
-  "22050",
-  "-ac",
-  "1",
-  "-c:a",
-  "libmp3lame",
-  "-b:a",
-  "48k",
-  "-f",
-  "mp3",
-] as const
 
 /**
  * Runs ffmpeg with given arguments and returns output buffer.
